@@ -277,6 +277,33 @@
       color: var(--wrong);
     }
 
+    .explanation {
+      min-height: 24px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .next-question {
+      margin-top: 16px;
+      padding: 11px 18px;
+      border: 0;
+      border-radius: 999px;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), #397fca);
+      box-shadow: 0 10px 24px rgba(93, 63, 211, 0.28);
+      cursor: pointer;
+      font-weight: 800;
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    .next-question:hover,
+    .next-question:focus-visible {
+      outline: none;
+      box-shadow: 0 13px 30px rgba(93, 63, 211, 0.38);
+      transform: translateY(-2px);
+    }
+
     .results {
       display: none;
       text-align: center;
@@ -402,6 +429,8 @@
         <h1 id="question"></h1>
         <div class="answers" id="answers"></div>
         <p class="feedback" id="feedback"></p>
+        <p class="explanation" id="explanation" hidden></p>
+        <button class="next-question" id="next-question" type="button" hidden>Next question</button>
       </div>
 
       <div class="results" id="results">
@@ -419,61 +448,71 @@
         topic: "Our solar system",
         question: "Which planet is known for its spectacular ring system?",
         answers: ["Mars", "Saturn", "Venus", "Mercury"],
-        correct: 1
+        correct: 1,
+        explanation: "Saturn has the most prominent ring system in our solar system, made of billions of icy particles."
       },
       {
         topic: "Stars",
         question: "What is the closest star to Earth?",
         answers: ["Sirius", "Proxima Centauri", "The Sun", "Betelgeuse"],
-        correct: 2
+        correct: 2,
+        explanation: "The Sun is Earth's nearest star; Proxima Centauri is the closest star beyond our solar system."
       },
       {
         topic: "Spaceflight",
         question: "Who was the first human to walk on the Moon?",
         answers: ["Yuri Gagarin", "Buzz Aldrin", "Neil Armstrong", "Sally Ride"],
-        correct: 2
+        correct: 2,
+        explanation: "Neil Armstrong stepped onto the Moon first during Apollo 11 in 1969."
       },
       {
         topic: "Galaxies",
         question: "What type of galaxy is the Milky Way?",
         answers: ["Elliptical", "Barred spiral", "Irregular", "Ring"],
-        correct: 1
+        correct: 1,
+        explanation: "The Milky Way is a barred spiral galaxy, with a central bar-shaped region of stars."
       },
       {
         topic: "Planet science",
         question: "Which planet has the shortest day?",
         answers: ["Earth", "Neptune", "Jupiter", "Mars"],
-        correct: 2
+        correct: 2,
+        explanation: "Jupiter rotates the fastest, completing one spin in about 10 hours."
       },
       {
         topic: "The Moon",
         question: "About how long does moonlight take to reach Earth?",
         answers: ["1.3 seconds", "8 minutes", "1 hour", "Instantly"],
-        correct: 0
+        correct: 0,
+        explanation: "Moonlight is reflected sunlight and takes roughly 1.3 seconds to travel from the Moon to Earth."
       },
       {
         topic: "Dwarf planets",
         question: "In which region of space is Pluto found?",
         answers: ["Asteroid Belt", "Oort Cloud", "Kuiper Belt", "Orion Arm"],
-        correct: 2
+        correct: 2,
+        explanation: "Pluto orbits in the Kuiper Belt, a region of icy bodies beyond Neptune."
       },
       {
         topic: "Cosmic objects",
         question: "What is the boundary around a black hole called?",
         answers: ["Event horizon", "Solar flare", "Accretion line", "Dark rim"],
-        correct: 0
+        correct: 0,
+        explanation: "The event horizon marks the point where escape from a black hole's gravity is no longer possible."
       },
       {
         topic: "Mars",
         question: "What is the name of the largest volcano in the solar system?",
         answers: ["Mauna Kea", "Olympus Mons", "Mount Sharp", "Elysium Mons"],
-        correct: 1
+        correct: 1,
+        explanation: "Olympus Mons on Mars is the largest known volcano in the solar system."
       },
       {
         topic: "The universe",
         question: "What is the most abundant element in the universe?",
         answers: ["Oxygen", "Carbon", "Helium", "Hydrogen"],
-        correct: 3
+        correct: 3,
+        explanation: "Hydrogen is the most abundant element, making up most normal matter in the universe."
       }
     ];
 
@@ -487,6 +526,8 @@
     const question = document.querySelector("#question");
     const answers = document.querySelector("#answers");
     const feedback = document.querySelector("#feedback");
+    const explanation = document.querySelector("#explanation");
+    const nextQuestionButton = document.querySelector("#next-question");
 
     let currentQuestion = 0;
     let score = 0;
@@ -503,6 +544,10 @@
       question.textContent = item.question;
       feedback.textContent = "";
       feedback.className = "feedback";
+      explanation.textContent = "";
+      explanation.hidden = true;
+      nextQuestionButton.hidden = true;
+      nextQuestionButton.textContent = currentQuestion === questions.length - 1 ? "See results" : "Next question";
       answers.replaceChildren();
 
       item.answers.forEach((answer, index) => {
@@ -539,14 +584,11 @@
         feedback.className = "feedback wrong show";
       }
 
-      window.setTimeout(() => {
-        currentQuestion += 1;
-        if (currentQuestion < questions.length) {
-          renderQuestion();
-        } else {
-          showResults();
-        }
-      }, 1300);
+      explanation.textContent = `Explanation: ${item.explanation}`;
+      explanation.hidden = false;
+      nextQuestionButton.textContent = currentQuestion === questions.length - 1 ? "See results" : "Next question";
+      nextQuestionButton.hidden = false;
+      nextQuestionButton.focus();
     }
 
     function getResult() {
@@ -581,7 +623,60 @@
       renderQuestion();
     });
 
+    nextQuestionButton.addEventListener("click", () => {
+      if (!locked) return;
+      currentQuestion += 1;
+      if (currentQuestion < questions.length) {
+        renderQuestion();
+      } else {
+        showResults();
+      }
+    });
+
+    function runFocusedTests() {
+      const failures = [];
+      const assert = (condition, message) => {
+        if (!condition) failures.push(message);
+      };
+
+      currentQuestion = 0;
+      score = 0;
+      results.classList.remove("show");
+      quiz.classList.remove("hidden");
+      renderQuestion();
+
+      const firstButtons = [...answers.children];
+      firstButtons[0].click();
+      assert(score === 0, "score changes after wrong first answer");
+      assert(feedback.classList.contains("show"), "feedback is not shown after answering");
+      assert(!explanation.hidden && explanation.textContent.startsWith("Explanation:"), "explanation is not visible");
+      assert(!nextQuestionButton.hidden && nextQuestionButton.textContent === "Next question", "next button is missing or mislabeled");
+
+      firstButtons[1].click();
+      assert(score === 0, "score changes on repeated answer selection");
+
+      currentQuestion = questions.length - 1;
+      renderQuestion();
+      const finalButtons = [...answers.children];
+      finalButtons[questions[currentQuestion].correct].click();
+      assert(nextQuestionButton.textContent === "See results", "final button label is not 'See results'");
+
+      nextQuestionButton.click();
+      assert(results.classList.contains("show"), "results screen does not appear after final question");
+
+      if (failures.length > 0) {
+        document.body.dataset.focusedTests = "failed";
+        throw new Error(`Focused tests failed: ${failures.join("; ")}`);
+      }
+      document.body.dataset.focusedTests = "passed";
+      console.info("Focused tests passed.");
+    }
+
     renderQuestion();
+
+    if (new URLSearchParams(window.location.search).get("runTests") === "1") {
+      runFocusedTests();
+    }
   </script>
 </body>
 </html>
